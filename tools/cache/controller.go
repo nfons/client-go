@@ -167,17 +167,17 @@ func (c *controller) processLoop() {
 //  * OnUpdate is called when an object is modified. Note that oldObj is the
 //      last known state of the object-- it is possible that several changes
 //      were combined together, so you can't use this to see every single
-//      change. OnUpdate is also called when a re-list happens, and it will
-//      get called even if nothing changed. This is useful for periodically
-//      evaluating or syncing something.
+//      change.
 //  * OnDelete will get the final state of the item if it is known, otherwise
 //      it will get an object of type DeletedFinalStateUnknown. This can
 //      happen if the watch is closed and misses the delete event and we don't
 //      notice the deletion until the subsequent re-list.
+//  * OnSync is called when re-list happens and a watchlist is synced
 type ResourceEventHandler interface {
 	OnAdd(obj interface{})
 	OnUpdate(oldObj, newObj interface{})
 	OnDelete(obj interface{})
+	OnSync(obj interface{})
 }
 
 // ResourceEventHandlerFuncs is an adaptor to let you easily specify as many or
@@ -187,6 +187,7 @@ type ResourceEventHandlerFuncs struct {
 	AddFunc    func(obj interface{})
 	UpdateFunc func(oldObj, newObj interface{})
 	DeleteFunc func(obj interface{})
+	SyncFunc   func(obj interface{})
 }
 
 // OnAdd calls AddFunc if it's not nil.
@@ -207,6 +208,13 @@ func (r ResourceEventHandlerFuncs) OnUpdate(oldObj, newObj interface{}) {
 func (r ResourceEventHandlerFuncs) OnDelete(obj interface{}) {
 	if r.DeleteFunc != nil {
 		r.DeleteFunc(obj)
+	}
+}
+
+// OnSync calls SyncFunc if it's not nil.
+func (r ResourceEventHandlerFuncs) OnSync(obj interface{}) {
+	if r.SyncFunc != nil {
+		r.SyncFunc(obj)
 	}
 }
 
